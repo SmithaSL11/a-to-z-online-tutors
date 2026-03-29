@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A to Z Online Tutors - Management Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">&#127891;</span>
+      <div class="logo-text">
+        <span class="logo-title">A to Z</span>
+        <span class="logo-sub">Online Tutors</span>
+      </div>
+    </div>
+    <div class="program-badge">Summer 2026-27</div>
+    <ul class="nav-links">
+      <li class="active" data-page="dashboard"><span class="nav-icon">&#9632;</span> Dashboard</li>
+      <li data-page="teachers"><span class="nav-icon">&#9733;</span> Teachers</li>
+      <li data-page="students"><span class="nav-icon">&#9679;</span> Students</li>
+      <li data-page="courses"><span class="nav-icon">&#9830;</span> Courses</li>
+      <li data-page="schedule"><span class="nav-icon">&#9200;</span> Schedule</li>
+      <li data-page="billing"><span class="nav-icon">&#36;</span> Billing</li>
+      <li data-page="registration"><span class="nav-icon">&#9998;</span> Registration</li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="contact-info">
+        <div>&#9742; +91 6283335390</div>
+        <div>&#9993; gargashu94@gmail.com</div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content">
+    <!-- Dashboard -->
+    <section id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="subtitle">Summer STEM Program &middot; June 1 - Aug 25, 2026</p>
+        </div>
+        <div class="header-badge">"Turn Summer Break Into Learning Advantage"</div>
+      </div>
+      <div class="program-banner">
+        <div class="banner-left">
+          <h2>Registration Open for 2026-2027 Session</h2>
+          <p>From 8th to College Course &middot; All Subjects Included</p>
+          <div class="banner-features">
+            <span>&#10003; One to One Sessions ($25-28/hr)</span>
+            <span>&#10003; Group of 3-4 Kids ($15/student/hr)</span>
+            <span>&#10003; Test &amp; Question Bank</span>
+            <span>&#10003; Parent-Teacher Updates</span>
+            <span>&#10003; 3 Classes a Week</span>
+          </div>
+        </div>
+        <div class="banner-right">
+          <a href="https://www.teacheron.com/tutor/2IDf" target="_blank" class="btn btn-outline">View Profile</a>
+          <a href="https://wa.me/+916283335390" target="_blank" class="btn btn-whatsapp">WhatsApp Us</a>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card stat-teachers">
+          <div class="stat-number" id="stat-teachers">0</div>
+          <div class="stat-label">Teachers</div>
+        </div>
+        <div class="stat-card stat-students">
+          <div class="stat-number" id="stat-students">0</div>
+          <div class="stat-label">Students</div>
+        </div>
+        <div class="stat-card stat-courses">
+          <div class="stat-number" id="stat-courses">0</div>
+          <div class="stat-label">Courses</div>
+        </div>
+        <div class="stat-card stat-sessions">
+          <div class="stat-number" id="stat-sessions">0</div>
+          <div class="stat-label">Scheduled Sessions</div>
+        </div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="card">
+          <h3>Upcoming Sessions</h3>
+          <div id="upcoming-sessions" class="list-container"></div>
+        </div>
+        <div class="card">
+          <h3>Recent Activity</h3>
+          <div id="recent-activity" class="list-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Teachers -->
+    <section id="page-teachers" class="page">
+      <div class="page-header">
+        <h1>Teachers</h1>
+        <button class="btn btn-primary" onclick="openModal('teacher')">+ Add Teacher</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="search-teachers" placeholder="Search teachers..." oninput="renderTeachers()">
+      </div>
+      <div id="teachers-list" class="table-container"></div>
+    </section>
+
+    <!-- Students -->
+    <section id="page-students" class="page">
+      <div class="page-header">
+        <h1>Students</h1>
+        <button class="btn btn-primary" onclick="openModal('student')">+ Add Student</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="search-students" placeholder="Search students..." oninput="renderStudents()">
+      </div>
+      <div id="students-list" class="table-container"></div>
+    </section>
+
+    <!-- Courses -->
+    <section id="page-courses" class="page">
+      <div class="page-header">
+        <h1>Courses</h1>
+        <button class="btn btn-primary" onclick="openModal('course')">+ Add Course</button>
+      </div>
+      <div class="courses-filter">
+        <button class="filter-btn active" onclick="filterCourses('all', this)">All</button>
+        <button class="filter-btn" onclick="filterCourses('ap', this)">AP Level</button>
+        <button class="filter-btn" onclick="filterCourses('foundation', this)">Foundation</button>
+      </div>
+      <div id="courses-list" class="cards-grid"></div>
+    </section>
+
+    <!-- Schedule -->
+    <section id="page-schedule" class="page">
+      <div class="page-header">
+        <h1>Schedule</h1>
+        <button class="btn btn-primary" onclick="openModal('session')">+ Add Session</button>
+      </div>
+      <div class="schedule-info">
+        <span class="badge badge-ap">Batch: June 1 - Aug 25, 2026</span>
+        <span class="badge badge-foundation">3 Classes/Week (Alternate Days)</span>
+      </div>
+      <div class="schedule-controls">
+        <button class="btn btn-secondary" onclick="changeWeek(-1)">&larr; Prev Week</button>
+        <span id="week-label" class="week-label"></span>
+        <button class="btn btn-secondary" onclick="changeWeek(1)">Next Week &rarr;</button>
+      </div>
+      <div id="schedule-grid" class="schedule-grid"></div>
+    </section>
+
+    <!-- Billing -->
+    <section id="page-billing" class="page">
+      <div class="page-header">
+        <h1>Billing</h1>
+        <button class="btn btn-primary" onclick="generateInvoices()">Generate Invoices</button>
+      </div>
+      <div class="pricing-info card" style="margin-bottom:20px">
+        <h3>Pricing Structure</h3>
+        <div class="pricing-grid">
+          <div class="pricing-item">
+            <div class="pricing-label">AP Courses (1-on-1)</div>
+            <div class="pricing-rate">$28/hr</div>
+            <div class="pricing-desc">AP Chem, AP Cal, AP Physics, AP Bio, AP Stats</div>
+          </div>
+          <div class="pricing-item">
+            <div class="pricing-label">Foundation Courses (1-on-1)</div>
+            <div class="pricing-rate">$25/hr</div>
+            <div class="pricing-desc">Honors Chem, Pre-Cal, Trig, Algebra, Organic Chem</div>
+          </div>
+          <div class="pricing-item">
+            <div class="pricing-label">Group Sessions (3-4 Kids)</div>
+            <div class="pricing-rate">$15/student/hr</div>
+            <div class="pricing-desc">All courses available in group format</div>
+          </div>
+        </div>
+      </div>
+      <div class="billing-summary">
+        <div class="stat-card stat-teachers">
+          <div class="stat-number" id="billing-total">$0</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card stat-students">
+          <div class="stat-number" id="billing-pending">$0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card stat-courses">
+          <div class="stat-number" id="billing-paid">$0</div>
+          <div class="stat-label">Collected</div>
+        </div>
+      </div>
+      <div id="billing-list" class="table-container"></div>
+    </section>
+
+    <!-- Registration -->
+    <section id="page-registration" class="page">
+      <div class="page-header">
+        <h1>Registration</h1>
+      </div>
+      <div class="registration-container">
+        <div class="card registration-card">
+          <div class="reg-header">
+            <h2>&#127891; "A to Z" Online Tutors</h2>
+            <p>Boost Your Skills During Summer Holidays</p>
+            <div class="reg-session-badge">Registration Open for 2026-2027 Session</div>
+          </div>
+
+          <form id="registration-form" onsubmit="handleRegistration(event)">
+            <div class="form-group">
+              <label>Student Name *</label>
+              <input name="studentName" required placeholder="Full name of student">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Grade Level *</label>
+                <select name="grade" required>
+                  <option value="">Select grade</option>
+                  <option value="8">8th Grade</option>
+                  <option value="9">9th Grade</option>
+                  <option value="10">10th Grade</option>
+                  <option value="11">11th Grade</option>
+                  <option value="12">12th Grade</option>
+                  <option value="college">College</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Session Type *</label>
+                <select name="sessionType" required>
+                  <option value="1on1">One to One ($25-28/hr)</option>
+                  <option value="group">Group of 3-4 Kids ($15/student/hr)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Courses Interested In *</label>
+              <div class="checkbox-grid">
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="AP Chemistry"> AP Chemistry</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="AP Calculus"> AP Cal</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="AP Physics"> AP Physics</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="AP Biology"> AP Biology</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="AP Statistics"> AP Statistics</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="Organic Chemistry"> Organic Chemistry</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="Honors Chemistry"> Honors Chemistry</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="Pre-Calculus"> Pre-Calculus</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="Trigonometry"> Trigonometry</label>
+                <label class="checkbox-label"><input type="checkbox" name="courses" value="Algebra"> Algebra</label>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Parent/Guardian Name *</label>
+                <input name="parentName" required placeholder="Parent name">
+              </div>
+              <div class="form-group">
+                <label>Parent Email *</label>
+                <input name="parentEmail" type="email" required placeholder="parent@email.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone Number *</label>
+                <input name="phone" required placeholder="+1 (555) 000-0000">
+              </div>
+              <div class="form-group">
+                <label>Location/Timezone</label>
+                <input name="location" placeholder="e.g. New York, EST">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Additional Notes</label>
+              <textarea name="notes" rows="3" placeholder="Any specific requirements, learning goals, or questions..."></textarea>
+            </div>
+
+            <div class="form-actions" style="justify-content:space-between">
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSd6yu8o8G9giUPw7cDorjRtORi0159Miks95a4ITd5LQ_VJdQ/viewform?usp=publish-editor" target="_blank" class="btn btn-secondary">Open Google Form Instead</a>
+              <button type="submit" class="btn btn-primary">Register Student</button>
+            </div>
+          </form>
+
+          <div class="reg-footer">
+            <h4>Contact Us</h4>
+            <div class="reg-contact">
+              <span>&#9742; +91 6283335390</span>
+              <span>&#9993; gargashu94@gmail.com</span>
+              <a href="https://wa.me/+916283335390" target="_blank">&#128172; WhatsApp</a>
+              <a href="https://www.teacheron.com/tutor/2IDf" target="_blank">&#127760; TeacherOn Profile</a>
+            </div>
+            <p class="reg-batch-info">Batch Starts: 1st June to 25th Aug 2026 &middot; 3 Classes a Week &middot; Alternate Days</p>
+          </div>
+        </div>
+
+        <div class="card registrations-list-card">
+          <h3>Recent Registrations</h3>
+          <div id="registrations-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="modal-form" class="modal-body" onsubmit="handleFormSubmit(event)"></form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
