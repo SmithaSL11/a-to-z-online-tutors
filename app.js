@@ -619,7 +619,7 @@ function renderCourses() {
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
         <span>${enrolled} student(s)</span>
-        <a href="${waLink(c.name)}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp</a>
+        <a href="${waLink(c.name)}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp +91 6283335390</a>
       </div>
     </div>`;
   }).join('');
