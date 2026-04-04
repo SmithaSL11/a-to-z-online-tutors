@@ -599,7 +599,6 @@ function renderCourses() {
   if (courseFilter !== 'all') courses = courses.filter(c => c.category === courseFilter);
 
   const teachers = DB.get('teachers');
-  const students = DB.get('students');
   const el = document.getElementById('courses-list');
 
   if (courses.length === 0) {
@@ -609,7 +608,6 @@ function renderCourses() {
 
   el.innerHTML = courses.map(c => {
     const teacher = teachers.find(t => t.id == c.teacherId);
-    const enrolled = students.filter(s => (s.courses || []).includes(c.id)).length;
     return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:start">
         <h4>${c.name}</h4>
@@ -618,7 +616,6 @@ function renderCourses() {
       <div class="course-meta">${teacher ? teacher.name : 'Unassigned'} &middot; ${c.subject || ''} &middot; ${c.totalHours || 45}hrs</div>
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
-        <span>${enrolled} student(s)</span>
         <a href="${waLink(c.name)}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp +91 6283335390</a>
       </div>
     </div>`;
