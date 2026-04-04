@@ -427,6 +427,26 @@ function handleRegistration(e) {
   regs.push(data);
   DB.set('registrations', regs);
 
+  const allCourses = DB.get('courses');
+  const courseIds = data.courses
+    .map(name => { const c = allCourses.find(x => x.name === name); return c ? c.id : null; })
+    .filter(Boolean);
+  const student = {
+    id: DB.nextId('students'),
+    name: data.studentName,
+    parent: data.parentName,
+    parentEmail: data.parentEmail,
+    phone: data.phone,
+    grade: data.grade,
+    courses: courseIds,
+    sessionType: data.sessionType,
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+  const students = DB.get('students');
+  students.push(student);
+  DB.set('students', students);
+
   logActivity(`New registration: ${escapeHtml(data.studentName)} (${escapeHtml(data.schoolName)}) - ${data.courses.join(', ')}`);
 
   // Send email notification to owner via EmailJS
@@ -584,7 +604,7 @@ function renderCourses() {
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
         <span>${enrolled} student(s)</span>
-        <span>$${c.rate1on1}/hr (1:1) &middot; $${c.rateGroup}/hr (group)</span>
+        <a href="https://wa.me/${OWNER_WHATSAPP.replace(/\D/g,')}?text=${encodeURIComponent('Hi! I\'m interested in ' + c.name + '. Could you share the pricing details?')}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp</a>
       </div>
     </div>`;
   }).join('');

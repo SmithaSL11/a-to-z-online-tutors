@@ -428,6 +428,27 @@ function handleRegistration(e) {
   regs.push(data);
   DB.set('registrations', regs);
 
+  // Create a student record so courses, schedule, and billing can reference them
+  const allCourses = DB.get('courses');
+  const courseIds = data.courses
+    .map(name => { const c = allCourses.find(x => x.name === name); return c ? c.id : null; })
+    .filter(Boolean);
+  const student = {
+    id: DB.nextId('students'),
+    name: data.studentName,
+    parent: data.parentName,
+    parentEmail: data.parentEmail,
+    phone: data.phone,
+    grade: data.grade,
+    courses: courseIds,
+    sessionType: data.sessionType,
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+  const students = DB.get('students');
+  students.push(student);
+  DB.set('students', students);
+
   logActivity(`New registration: ${escapeHtml(data.studentName)} (${escapeHtml(data.schoolName)}) - ${data.courses.join(', ')}`);
 
   // Send email notification to owner via EmailJS

@@ -300,10 +300,27 @@ tr:hover td { background: var(--gray-50); }
 .course-card .course-stats {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-top: 12px;
   border-top: 1px solid var(--gray-100);
   font-size: 13px;
   color: var(--gray-500);
+}
+.course-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #25d366;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  transition: background 0.2s, color 0.2s;
+}
+.course-wa-btn:hover {
+  background: #25d366;
+  color: #fff;
 }
 
 /* Filter */
