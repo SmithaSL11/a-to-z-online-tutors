@@ -44,11 +44,20 @@ document.querySelectorAll('.nav-links li').forEach(li => {
 });
 
 // ── Toast ──
-function showToast(msg, type = '') {
+let toastTimeoutId = null;
+
+function showToast(msg, type = '', { html = false, duration = 3000 } = {}) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  if (toastTimeoutId) clearTimeout(toastTimeoutId);
+  if (html) { t.innerHTML = msg; } else { t.textContent = msg; }
   t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 3000);
+  toastTimeoutId = setTimeout(() => { t.className = 'toast'; t.textContent = ''; toastTimeoutId = null; }, duration);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
 }
 
 // ── Modal ──
@@ -419,8 +428,7 @@ function handleRegistration(e) {
   regs.push(data);
   DB.set('registrations', regs);
 
-  showToast(`${data.studentName} registered successfully!`, 'success');
-  logActivity(`New registration: ${data.studentName} (${data.schoolName}) - ${data.courses.join(', ')}`);
+  logActivity(`New registration: ${escapeHtml(data.studentName)} (${escapeHtml(data.schoolName)}) - ${data.courses.join(', ')}`);
 
   // Send email notification to owner via EmailJS
   if (EMAILJS_CONFIG.publicKey !== 'YOUR_EMAILJS_PUBLIC_KEY') {
@@ -446,10 +454,12 @@ function handleRegistration(e) {
   );
   const cleanPhone = data.phone.replace(/\D/g, '');
   const waLink = `https://wa.me/${cleanPhone}?text=${welcomeMsg}`;
-  const toast = document.getElementById('toast');
-  toast.innerHTML = `${data.studentName} registered! <a href="${waLink}" target="_blank" style="color:#fff;text-decoration:underline;margin-left:8px">Send Welcome WhatsApp &#128172;</a>`;
-  toast.className = 'toast show success';
-  setTimeout(() => { toast.className = 'toast'; toast.textContent = ''; }, 8000);
+  const safeName = escapeHtml(data.studentName);
+  showToast(
+    `${safeName} registered! <a href="${waLink}" target="_blank" style="color:#fff;text-decoration:underline;margin-left:8px">Send Welcome WhatsApp &#128172;</a>`,
+    'success',
+    { html: true, duration: 8000 }
+  );
 
   form.reset();
   renderRegistrations();
@@ -582,7 +592,7 @@ function renderCourses() {
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
         <span>${enrolled} student(s)</span>
-        <span>$${c.rate1on1}/hr (1:1) &middot; $${c.rateGroup}/hr (group)</span>
+        <a href="https://wa.me/${OWNER_WHATSAPP.replace(/\D/g,')}?text=${encodeURIComponent('Hi! I\'m interested in ' + c.name + '. Could you share the pricing details?')}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp</a>
       </div>
     </div>`;
   }).join('');
@@ -798,7 +808,12 @@ function toggleTag(el, tag) {
   }
 }
 
+let starRatingInitialized = false;
+
 function initStarRating() {
+  if (starRatingInitialized) return;
+  starRatingInitialized = true;
+
   const stars = document.querySelectorAll('.star');
   const hint = document.getElementById('rating-hint');
 

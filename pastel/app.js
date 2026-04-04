@@ -1,3 +1,19 @@
+// ── EmailJS Configuration ──
+// To enable email notifications:
+// 1. Create a free account at https://www.emailjs.com
+// 2. Create a service (e.g. Gmail) and note the Service ID
+// 3. Create an email template and note the Template ID
+// 4. Copy your Public Key from the EmailJS dashboard
+// 5. Replace the placeholder values below
+const EMAILJS_CONFIG = {
+  publicKey: 'YOUR_EMAILJS_PUBLIC_KEY',   // replace with your EmailJS public key
+  serviceId: 'YOUR_SERVICE_ID',           // replace with your EmailJS service ID
+  templateId: 'YOUR_TEMPLATE_ID'          // replace with your EmailJS template ID
+};
+// Template variables expected: student_name, school_name, grade, session_type, courses, parent_name, parent_email, phone, location, notes
+const OWNER_EMAIL = 'gargashu94@gmail.com';
+const OWNER_WHATSAPP = '+916283335390';
+
 // ── Data Store (localStorage) ──
 const DB = {
   get(key) { return JSON.parse(localStorage.getItem('atz_' + key) || '[]'); },
@@ -27,11 +43,20 @@ document.querySelectorAll('.nav-links li').forEach(li => {
 });
 
 // ── Toast ──
-function showToast(msg, type = '') {
+let toastTimeoutId = null;
+
+function showToast(msg, type = '', { html = false, duration = 3000 } = {}) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  if (toastTimeoutId) clearTimeout(toastTimeoutId);
+  if (html) { t.innerHTML = msg; } else { t.textContent = msg; }
   t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 3000);
+  toastTimeoutId = setTimeout(() => { t.className = 'toast'; t.textContent = ''; toastTimeoutId = null; }, duration);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
 }
 
 // ── Modal ──
@@ -385,6 +410,7 @@ function handleRegistration(e) {
   const fd = new FormData(form);
   const data = {
     studentName: fd.get('studentName'),
+    schoolName: fd.get('schoolName'),
     grade: fd.get('grade'),
     sessionType: fd.get('sessionType'),
     parentName: fd.get('parentName'),
@@ -401,31 +427,39 @@ function handleRegistration(e) {
   regs.push(data);
   DB.set('registrations', regs);
 
-  // Also add as a student
-  const students = DB.get('students');
-  const courseMap = DB.get('courses');
-  const enrolledIds = data.courses.map(cName => {
-    const c = courseMap.find(x => x.name === cName);
-    return c ? c.id : null;
-  }).filter(Boolean);
+  logActivity(`New registration: ${escapeHtml(data.studentName)} (${escapeHtml(data.schoolName)}) - ${data.courses.join(', ')}`);
 
-  students.push({
-    id: DB.nextId('students'),
-    name: data.studentName,
-    parent: data.parentName,
-    parentEmail: data.parentEmail,
-    phone: data.phone,
-    grade: data.grade,
-    courses: enrolledIds,
-    sessionType: data.sessionType,
-    status: 'active',
-    notes: data.notes,
-    createdAt: data.registeredAt
-  });
-  DB.set('students', students);
+  // Send email notification to owner via EmailJS
+  if (EMAILJS_CONFIG.publicKey !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+    emailjs.init(EMAILJS_CONFIG.publicKey);
+    emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+      to_email: OWNER_EMAIL,
+      student_name: data.studentName,
+      school_name: data.schoolName,
+      grade: data.grade,
+      session_type: data.sessionType === 'group' ? 'Group of 3-4 Kids' : 'One to One',
+      courses: data.courses.join(', ') || 'Not selected',
+      parent_name: data.parentName,
+      parent_email: data.parentEmail,
+      phone: data.phone,
+      location: data.location || 'Not provided',
+      notes: data.notes || 'None'
+    }).catch(err => console.error('EmailJS error:', err));
+  }
 
-  showToast(`${data.studentName} registered successfully!`, 'success');
-  logActivity(`New registration: ${data.studentName} - ${data.courses.join(', ')}`);
+  // Show WhatsApp welcome link for student
+  const welcomeMsg = encodeURIComponent(
+    `Hello! Thank you for registering with A to Z Online Tutors. We will contact you soon. - Ashish Garg`
+  );
+  const cleanPhone = data.phone.replace(/\D/g, '');
+  const waLink = `https://wa.me/${cleanPhone}?text=${welcomeMsg}`;
+  const safeName = escapeHtml(data.studentName);
+  showToast(
+    `${safeName} registered! <a href="${waLink}" target="_blank" style="color:#fff;text-decoration:underline;margin-left:8px">Send Welcome WhatsApp &#128172;</a>`,
+    'success',
+    { html: true, duration: 8000 }
+  );
+
   form.reset();
   renderRegistrations();
 }
@@ -439,63 +473,22 @@ function renderRegistrations() {
     el.innerHTML = '<div class="empty-state"><p>No registrations yet</p></div>';
     return;
   }
+  // Only show student name and school name — no personal data visible to anyone else
   el.innerHTML = regs.map(r => `
     <div class="list-item">
       <div class="list-item-left">
         <span class="list-item-title">${r.studentName}</span>
-        <span class="list-item-sub">${r.courses.join(', ')}</span>
-        <span class="list-item-sub">${r.parentName} &middot; ${r.phone}</span>
+        <span class="list-item-sub">${r.schoolName || ''}</span>
       </div>
       <div class="list-item-right">
-        <span class="badge badge-${r.sessionType === 'group' ? 'group' : '1on1'}">${r.sessionType === 'group' ? 'Group' : '1-on-1'}</span>
-        <br>${timeAgo(r.registeredAt)}
+        ${timeAgo(r.registeredAt)}
       </div>
     </div>`).join('');
 }
 
 // ── Render: Dashboard ──
 function renderDashboard() {
-  document.getElementById('stat-teachers').textContent = DB.get('teachers').length;
-  document.getElementById('stat-students').textContent = DB.get('students').length;
   document.getElementById('stat-courses').textContent = DB.get('courses').length;
-  document.getElementById('stat-sessions').textContent = DB.get('sessions').length;
-
-  const sessions = DB.get('sessions')
-    .filter(s => new Date(s.date) >= new Date(new Date().toDateString()))
-    .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
-    .slice(0, 5);
-
-  const teachers = DB.get('teachers');
-  const courses = DB.get('courses');
-
-  const upEl = document.getElementById('upcoming-sessions');
-  if (sessions.length === 0) {
-    upEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9200;</div><p>No upcoming sessions</p></div>';
-  } else {
-    upEl.innerHTML = sessions.map(s => {
-      const course = courses.find(c => c.id == s.courseId);
-      const teacher = teachers.find(t => t.id == s.teacherId);
-      return `<div class="list-item">
-        <div class="list-item-left">
-          <span class="list-item-title">${course ? course.name : 'Unknown'}</span>
-          <span class="list-item-sub">${teacher ? teacher.name : ''} &middot; ${(s.studentIds || []).length} student(s)</span>
-        </div>
-        <div class="list-item-right">${formatDate(s.date)} ${s.time}</div>
-      </div>`;
-    }).join('');
-  }
-
-  const activity = DB.get('activity').slice(0, 8);
-  const actEl = document.getElementById('recent-activity');
-  if (activity.length === 0) {
-    actEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9998;</div><p>No recent activity</p></div>';
-  } else {
-    actEl.innerHTML = activity.map(a => `
-      <div class="list-item">
-        <span class="list-item-title">${a.msg}</span>
-        <span class="list-item-right">${timeAgo(a.time)}</span>
-      </div>`).join('');
-  }
 }
 
 // ── Render: Teachers ──
@@ -575,14 +568,14 @@ function renderCourses() {
   const el = document.getElementById('courses-list');
 
   if (courses.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9830;</div><p>No courses yet. Add your first course!</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9830;</div><p>No courses available yet.</p></div>';
     return;
   }
 
   el.innerHTML = courses.map(c => {
     const teacher = teachers.find(t => t.id == c.teacherId);
     const enrolled = students.filter(s => (s.courses || []).includes(c.id)).length;
-    return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}" onclick="openModal('course', ${c.id})">
+    return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:start">
         <h4>${c.name}</h4>
         <span class="badge badge-${c.category}">${c.category === 'ap' ? 'AP Level' : 'Foundation'}</span>
