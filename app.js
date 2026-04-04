@@ -960,5 +960,31 @@ function renderFeedbackPage() {
   initStarRating();
 }
 
+// ── Seed Data ──
+function seedDefaults() {
+  if (DB.get('teachers').length === 0) {
+    DB.set('teachers', [{
+      id: 1, name: 'Ashish Garg', email: 'gargashu94@gmail.com',
+      phone: '+91 6283335390', specialization: 'Chemistry', status: 'active',
+      createdAt: new Date().toISOString()
+    }]);
+  }
+  if (DB.get('courses').length === 0) {
+    DB.set('courses', [
+      { id: 1, name: 'AP Chemistry', subject: 'Chemistry', category: 'ap', teacherId: 1, totalHours: 45, rate1on1: 28, rateGroup: 15, description: 'Complete AP Chemistry preparation - Summer 2026' },
+      { id: 2, name: 'AP Physics', subject: 'Physics', category: 'ap', teacherId: 1, totalHours: 45, rate1on1: 28, rateGroup: 15, description: 'AP Physics 1 & 2 summer intensive' },
+      { id: 3, name: 'AP Calculus', subject: 'Mathematics', category: 'ap', teacherId: 1, totalHours: 40, rate1on1: 28, rateGroup: 15, description: 'AP Calculus AB/BC summer course' },
+      { id: 4, name: 'AP Biology', subject: 'Biology', category: 'ap', teacherId: 1, totalHours: 45, rate1on1: 28, rateGroup: 15, description: 'AP Biology complete preparation' },
+      { id: 5, name: 'AP Statistics', subject: 'Statistics', category: 'ap', teacherId: 1, totalHours: 35, rate1on1: 28, rateGroup: 15, description: 'AP Statistics summer prep' },
+      { id: 6, name: 'Organic Chemistry', subject: 'Organic Chemistry', category: 'ap', teacherId: 1, totalHours: 40, rate1on1: 28, rateGroup: 15, description: 'Organic Chemistry fundamentals to advanced' },
+      { id: 7, name: 'Honors Chemistry', subject: 'Chemistry', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Foundation honors chemistry course' },
+      { id: 8, name: 'Pre-Calculus', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Pre-calculus fundamentals & preparation' },
+      { id: 9, name: 'Trigonometry', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 30, rate1on1: 25, rateGroup: 15, description: 'Trigonometry foundations' },
+      { id: 10, name: 'Algebra', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 30, rate1on1: 25, rateGroup: 15, description: 'Algebra I & II fundamentals' }
+    ]);
+  }
+}
+seedDefaults();
+
 // ── Init ──
 renderDashboard();
