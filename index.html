@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>A to Z Online Tutors - Management Dashboard</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
   <nav class="sidebar">
@@ -18,11 +19,7 @@
     <div class="program-badge">Summer 2026-27</div>
     <ul class="nav-links">
       <li class="active" data-page="dashboard"><span class="nav-icon">&#9632;</span> Dashboard</li>
-      <li data-page="teachers"><span class="nav-icon">&#9733;</span> Teachers</li>
-      <li data-page="students"><span class="nav-icon">&#9679;</span> Students</li>
       <li data-page="courses"><span class="nav-icon">&#9830;</span> Courses</li>
-      <li data-page="schedule"><span class="nav-icon">&#9200;</span> Schedule</li>
-      <li data-page="billing"><span class="nav-icon">&#36;</span> Billing</li>
       <li data-page="registration"><span class="nav-icon">&#9998;</span> Registration</li>
     </ul>
     <div class="sidebar-footer">
@@ -48,8 +45,8 @@
           <h2>Registration Open for 2026-2027 Session</h2>
           <p>From 8th to College Course &middot; All Subjects Included</p>
           <div class="banner-features">
-            <span>&#10003; One to One Sessions ($25-28/hr)</span>
-            <span>&#10003; Group of 3-4 Kids ($15/student/hr)</span>
+            <span>&#10003; One to One Sessions</span>
+            <span>&#10003; Group of 3-4 Kids</span>
             <span>&#10003; Test &amp; Question Bank</span>
             <span>&#10003; Parent-Teacher Updates</span>
             <span>&#10003; 3 Classes a Week</span>
@@ -61,64 +58,110 @@
         </div>
       </div>
       <div class="stats-grid">
-        <div class="stat-card stat-teachers">
-          <div class="stat-number" id="stat-teachers">0</div>
-          <div class="stat-label">Teachers</div>
-        </div>
-        <div class="stat-card stat-students">
-          <div class="stat-number" id="stat-students">0</div>
-          <div class="stat-label">Students</div>
-        </div>
         <div class="stat-card stat-courses">
           <div class="stat-number" id="stat-courses">0</div>
           <div class="stat-label">Courses</div>
         </div>
         <div class="stat-card stat-sessions">
-          <div class="stat-number" id="stat-sessions">0</div>
-          <div class="stat-label">Scheduled Sessions</div>
+          <div class="stat-number" id="stat-registrations">0</div>
+          <div class="stat-label">Registrations</div>
+        </div>
+        <div class="stat-card stat-students">
+          <div class="stat-number" id="stat-rating">—</div>
+          <div class="stat-label">Avg Rating</div>
+        </div>
+        <div class="stat-card stat-teachers">
+          <div class="stat-number" id="stat-reviews">0</div>
+          <div class="stat-label">Reviews</div>
         </div>
       </div>
-      <div class="dashboard-grid">
-        <div class="card">
-          <h3>Upcoming Sessions</h3>
-          <div id="upcoming-sessions" class="list-container"></div>
-        </div>
-        <div class="card">
-          <h3>Recent Activity</h3>
-          <div id="recent-activity" class="list-container"></div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Teachers -->
-    <section id="page-teachers" class="page">
-      <div class="page-header">
-        <h1>Teachers</h1>
-        <button class="btn btn-primary" onclick="openModal('teacher')">+ Add Teacher</button>
-      </div>
-      <div class="search-bar">
-        <input type="text" id="search-teachers" placeholder="Search teachers..." oninput="renderTeachers()">
-      </div>
-      <div id="teachers-list" class="table-container"></div>
-    </section>
+      <!-- Feedback Section -->
+      <div class="dashboard-feedback-grid">
+        <!-- Submit form -->
+        <div class="card feedback-form-card">
+          <div class="feedback-hero">
+            <div class="feedback-hero-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <h2>How was your experience?</h2>
+            <p>Takes less than a minute &middot; Anonymous is fine</p>
+          </div>
+          <form id="feedback-form" onsubmit="handleFeedback(event)">
+            <div class="feedback-section">
+              <div class="role-toggle">
+                <button type="button" class="role-btn active" data-role="student" onclick="setFeedbackRole('student', this)">&#127891; Student</button>
+                <button type="button" class="role-btn" data-role="parent" onclick="setFeedbackRole('parent', this)">&#128106; Parent</button>
+              </div>
+            </div>
+            <div class="feedback-section">
+              <label class="feedback-label">Overall rating <span class="req">*</span></label>
+              <div class="star-rating" id="star-rating">
+                <span class="star" data-value="1">&#9733;</span>
+                <span class="star" data-value="2">&#9733;</span>
+                <span class="star" data-value="3">&#9733;</span>
+                <span class="star" data-value="4">&#9733;</span>
+                <span class="star" data-value="5">&#9733;</span>
+              </div>
+              <div class="rating-hint" id="rating-hint">Tap a star to rate</div>
+              <input type="hidden" name="rating" id="rating-value">
+            </div>
+            <div class="feedback-section" id="tags-section" style="display:none">
+              <label class="feedback-label">What stood out? <span class="optional-label">optional</span></label>
+              <div class="tag-grid" id="feedback-tags"></div>
+            </div>
+            <div class="feedback-section" id="course-section" style="display:none">
+              <label class="feedback-label">Course <span class="optional-label">optional</span></label>
+              <select name="course" class="feedback-input">
+                <option value="">General / All courses</option>
+                <option>AP Chemistry</option>
+                <option>AP Calculus</option>
+                <option>AP Physics</option>
+                <option>AP Biology</option>
+                <option>AP Statistics</option>
+                <option>Organic Chemistry</option>
+                <option>Honors Chemistry</option>
+                <option>Pre-Calculus</option>
+                <option>Trigonometry</option>
+                <option>Algebra</option>
+              </select>
+            </div>
+            <div class="feedback-section" id="comment-section" style="display:none">
+              <label class="feedback-label">Anything else? <span class="optional-label">optional</span></label>
+              <textarea name="comment" rows="3" class="feedback-input" placeholder="Tell us more about your experience..."></textarea>
+            </div>
+            <div class="feedback-section" id="name-section" style="display:none">
+              <label class="feedback-label">Your name <span class="optional-label">optional</span></label>
+              <input type="text" name="submitter_name" class="feedback-input" placeholder="Leave blank to submit anonymously">
+            </div>
+            <div id="feedback-submit-area" style="display:none">
+              <button type="submit" class="btn btn-primary feedback-submit-btn">Submit Feedback</button>
+            </div>
+          </form>
+        </div>
 
-    <!-- Students -->
-    <section id="page-students" class="page">
-      <div class="page-header">
-        <h1>Students</h1>
-        <button class="btn btn-primary" onclick="openModal('student')">+ Add Student</button>
+        <!-- Reviews panel -->
+        <div class="card feedback-reviews-card">
+          <div class="reviews-header">
+            <h3>Recent Reviews</h3>
+            <div class="reviews-avg" id="reviews-avg" style="display:none">
+              <span class="avg-score" id="avg-score"></span>
+              <span class="avg-stars" id="avg-stars"></span>
+              <span class="avg-count" id="avg-count"></span>
+            </div>
+          </div>
+          <div id="reviews-list">
+            <div class="empty-state">
+              <div class="empty-icon">&#128172;</div>
+              <p>No reviews yet. Be the first!</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="search-bar">
-        <input type="text" id="search-students" placeholder="Search students..." oninput="renderStudents()">
-      </div>
-      <div id="students-list" class="table-container"></div>
     </section>
 
     <!-- Courses -->
     <section id="page-courses" class="page">
       <div class="page-header">
         <h1>Courses</h1>
-        <button class="btn btn-primary" onclick="openModal('course')">+ Add Course</button>
       </div>
       <div class="courses-filter">
         <button class="filter-btn active" onclick="filterCourses('all', this)">All</button>
@@ -126,67 +169,6 @@
         <button class="filter-btn" onclick="filterCourses('foundation', this)">Foundation</button>
       </div>
       <div id="courses-list" class="cards-grid"></div>
-    </section>
-
-    <!-- Schedule -->
-    <section id="page-schedule" class="page">
-      <div class="page-header">
-        <h1>Schedule</h1>
-        <button class="btn btn-primary" onclick="openModal('session')">+ Add Session</button>
-      </div>
-      <div class="schedule-info">
-        <span class="badge badge-ap">Batch: June 1 - Aug 25, 2026</span>
-        <span class="badge badge-foundation">3 Classes/Week (Alternate Days)</span>
-      </div>
-      <div class="schedule-controls">
-        <button class="btn btn-secondary" onclick="changeWeek(-1)">&larr; Prev Week</button>
-        <span id="week-label" class="week-label"></span>
-        <button class="btn btn-secondary" onclick="changeWeek(1)">Next Week &rarr;</button>
-      </div>
-      <div id="schedule-grid" class="schedule-grid"></div>
-    </section>
-
-    <!-- Billing -->
-    <section id="page-billing" class="page">
-      <div class="page-header">
-        <h1>Billing</h1>
-        <button class="btn btn-primary" onclick="generateInvoices()">Generate Invoices</button>
-      </div>
-      <div class="pricing-info card" style="margin-bottom:20px">
-        <h3>Pricing Structure</h3>
-        <div class="pricing-grid">
-          <div class="pricing-item">
-            <div class="pricing-label">AP Courses (1-on-1)</div>
-            <div class="pricing-rate">$28/hr</div>
-            <div class="pricing-desc">AP Chem, AP Cal, AP Physics, AP Bio, AP Stats</div>
-          </div>
-          <div class="pricing-item">
-            <div class="pricing-label">Foundation Courses (1-on-1)</div>
-            <div class="pricing-rate">$25/hr</div>
-            <div class="pricing-desc">Honors Chem, Pre-Cal, Trig, Algebra, Organic Chem</div>
-          </div>
-          <div class="pricing-item">
-            <div class="pricing-label">Group Sessions (3-4 Kids)</div>
-            <div class="pricing-rate">$15/student/hr</div>
-            <div class="pricing-desc">All courses available in group format</div>
-          </div>
-        </div>
-      </div>
-      <div class="billing-summary">
-        <div class="stat-card stat-teachers">
-          <div class="stat-number" id="billing-total">$0</div>
-          <div class="stat-label">Total Revenue</div>
-        </div>
-        <div class="stat-card stat-students">
-          <div class="stat-number" id="billing-pending">$0</div>
-          <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-card stat-courses">
-          <div class="stat-number" id="billing-paid">$0</div>
-          <div class="stat-label">Collected</div>
-        </div>
-      </div>
-      <div id="billing-list" class="table-container"></div>
     </section>
 
     <!-- Registration -->
@@ -207,6 +189,10 @@
               <label>Student Name *</label>
               <input name="studentName" required placeholder="Full name of student">
             </div>
+            <div class="form-group">
+              <label>School Name *</label>
+              <input name="schoolName" required placeholder="Name of student's school">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>Grade Level *</label>
@@ -223,8 +209,8 @@
               <div class="form-group">
                 <label>Session Type *</label>
                 <select name="sessionType" required>
-                  <option value="1on1">One to One ($25-28/hr)</option>
-                  <option value="group">Group of 3-4 Kids ($15/student/hr)</option>
+                  <option value="1on1">One to One</option>
+                  <option value="group">Group of 3-4 Kids</option>
                 </select>
               </div>
             </div>
@@ -268,8 +254,9 @@
               <textarea name="notes" rows="3" placeholder="Any specific requirements, learning goals, or questions..."></textarea>
             </div>
 
-            <div class="form-actions" style="justify-content:space-between">
-              <a href="https://docs.google.com/forms/d/e/1FAIpQLSd6yu8o8G9giUPw7cDorjRtORi0159Miks95a4ITd5LQ_VJdQ/viewform?usp=publish-editor" target="_blank" class="btn btn-secondary">Open Google Form Instead</a>
+            <p class="reg-fees-note">&#10024; Quality content at nominal fees &middot; Individualized pricing</p>
+
+            <div class="form-actions">
               <button type="submit" class="btn btn-primary">Register Student</button>
             </div>
           </form>
@@ -287,14 +274,14 @@
         </div>
 
         <div class="card registrations-list-card">
-          <h3>Recent Registrations</h3>
+          <h3>Registered Students</h3>
           <div id="registrations-list"></div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Modal -->
+  <!-- Modal (kept for internal use) -->
   <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">

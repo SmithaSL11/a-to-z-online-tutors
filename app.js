@@ -1,3 +1,20 @@
+// ── EmailJS Configuration ──
+// To enable email notifications:
+// 1. Create a free account at https://www.emailjs.com
+// 2. Create a service (e.g. Gmail) and note the Service ID
+// 3. Create an email template and note the Template ID
+// 4. Copy your Public Key from the EmailJS dashboard
+// 5. Replace the placeholder values below
+const EMAILJS_CONFIG = {
+  publicKey: 'vVS2o8DXEc-QF-YpM',
+  serviceId: 'service_kf7levo',
+  templateId: 'template_tcu939f',          // registration template
+  feedbackTemplateId: 'template_vogfb5m'
+};
+// Template variables expected: student_name, school_name, grade, session_type, courses, parent_name, parent_email, phone, location, notes
+const OWNER_EMAIL = 'gargashu94@gmail.com';
+const OWNER_WHATSAPP = '+916283335390';
+
 // ── Data Store (localStorage) ──
 const DB = {
   get(key) { return JSON.parse(localStorage.getItem('atz_' + key) || '[]'); },
@@ -385,6 +402,7 @@ function handleRegistration(e) {
   const fd = new FormData(form);
   const data = {
     studentName: fd.get('studentName'),
+    schoolName: fd.get('schoolName'),
     grade: fd.get('grade'),
     sessionType: fd.get('sessionType'),
     parentName: fd.get('parentName'),
@@ -401,31 +419,38 @@ function handleRegistration(e) {
   regs.push(data);
   DB.set('registrations', regs);
 
-  // Also add as a student
-  const students = DB.get('students');
-  const courseMap = DB.get('courses');
-  const enrolledIds = data.courses.map(cName => {
-    const c = courseMap.find(x => x.name === cName);
-    return c ? c.id : null;
-  }).filter(Boolean);
-
-  students.push({
-    id: DB.nextId('students'),
-    name: data.studentName,
-    parent: data.parentName,
-    parentEmail: data.parentEmail,
-    phone: data.phone,
-    grade: data.grade,
-    courses: enrolledIds,
-    sessionType: data.sessionType,
-    status: 'active',
-    notes: data.notes,
-    createdAt: data.registeredAt
-  });
-  DB.set('students', students);
-
   showToast(`${data.studentName} registered successfully!`, 'success');
-  logActivity(`New registration: ${data.studentName} - ${data.courses.join(', ')}`);
+  logActivity(`New registration: ${data.studentName} (${data.schoolName}) - ${data.courses.join(', ')}`);
+
+  // Send email notification to owner via EmailJS
+  if (EMAILJS_CONFIG.publicKey !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+    emailjs.init(EMAILJS_CONFIG.publicKey);
+    emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+      to_email: OWNER_EMAIL,
+      student_name: data.studentName,
+      school_name: data.schoolName,
+      grade: data.grade,
+      session_type: data.sessionType === 'group' ? 'Group of 3-4 Kids' : 'One to One',
+      courses: data.courses.join(', ') || 'Not selected',
+      parent_name: data.parentName,
+      parent_email: data.parentEmail,
+      phone: data.phone,
+      location: data.location || 'Not provided',
+      notes: data.notes || 'None'
+    }).catch(err => console.error('EmailJS error:', err));
+  }
+
+  // Show WhatsApp welcome link for student
+  const welcomeMsg = encodeURIComponent(
+    `Hello! Thank you for registering with A to Z Online Tutors. We will contact you soon. - Ashish Garg`
+  );
+  const cleanPhone = data.phone.replace(/\D/g, '');
+  const waLink = `https://wa.me/${cleanPhone}?text=${welcomeMsg}`;
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `${data.studentName} registered! <a href="${waLink}" target="_blank" style="color:#fff;text-decoration:underline;margin-left:8px">Send Welcome WhatsApp &#128172;</a>`;
+  toast.className = 'toast show success';
+  setTimeout(() => { toast.className = 'toast'; toast.textContent = ''; }, 8000);
+
   form.reset();
   renderRegistrations();
 }
@@ -439,63 +464,29 @@ function renderRegistrations() {
     el.innerHTML = '<div class="empty-state"><p>No registrations yet</p></div>';
     return;
   }
+  // Only show student name and school name — no personal data visible to anyone else
   el.innerHTML = regs.map(r => `
     <div class="list-item">
       <div class="list-item-left">
         <span class="list-item-title">${r.studentName}</span>
-        <span class="list-item-sub">${r.courses.join(', ')}</span>
-        <span class="list-item-sub">${r.parentName} &middot; ${r.phone}</span>
+        <span class="list-item-sub">${r.schoolName || ''}</span>
       </div>
       <div class="list-item-right">
-        <span class="badge badge-${r.sessionType === 'group' ? 'group' : '1on1'}">${r.sessionType === 'group' ? 'Group' : '1-on-1'}</span>
-        <br>${timeAgo(r.registeredAt)}
+        ${timeAgo(r.registeredAt)}
       </div>
     </div>`).join('');
 }
 
 // ── Render: Dashboard ──
 function renderDashboard() {
-  document.getElementById('stat-teachers').textContent = DB.get('teachers').length;
-  document.getElementById('stat-students').textContent = DB.get('students').length;
   document.getElementById('stat-courses').textContent = DB.get('courses').length;
-  document.getElementById('stat-sessions').textContent = DB.get('sessions').length;
-
-  const sessions = DB.get('sessions')
-    .filter(s => new Date(s.date) >= new Date(new Date().toDateString()))
-    .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
-    .slice(0, 5);
-
-  const teachers = DB.get('teachers');
-  const courses = DB.get('courses');
-
-  const upEl = document.getElementById('upcoming-sessions');
-  if (sessions.length === 0) {
-    upEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9200;</div><p>No upcoming sessions</p></div>';
-  } else {
-    upEl.innerHTML = sessions.map(s => {
-      const course = courses.find(c => c.id == s.courseId);
-      const teacher = teachers.find(t => t.id == s.teacherId);
-      return `<div class="list-item">
-        <div class="list-item-left">
-          <span class="list-item-title">${course ? course.name : 'Unknown'}</span>
-          <span class="list-item-sub">${teacher ? teacher.name : ''} &middot; ${(s.studentIds || []).length} student(s)</span>
-        </div>
-        <div class="list-item-right">${formatDate(s.date)} ${s.time}</div>
-      </div>`;
-    }).join('');
-  }
-
-  const activity = DB.get('activity').slice(0, 8);
-  const actEl = document.getElementById('recent-activity');
-  if (activity.length === 0) {
-    actEl.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9998;</div><p>No recent activity</p></div>';
-  } else {
-    actEl.innerHTML = activity.map(a => `
-      <div class="list-item">
-        <span class="list-item-title">${a.msg}</span>
-        <span class="list-item-right">${timeAgo(a.time)}</span>
-      </div>`).join('');
-  }
+  document.getElementById('stat-registrations').textContent = DB.get('registrations').length;
+  const reviews = DB.get('feedback');
+  document.getElementById('stat-reviews').textContent = reviews.length;
+  const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';
+  document.getElementById('stat-rating').textContent = avg === '—' ? '—' : avg + ' ★';
+  renderReviews();
+  initStarRating();
 }
 
 // ── Render: Teachers ──
@@ -575,14 +566,14 @@ function renderCourses() {
   const el = document.getElementById('courses-list');
 
   if (courses.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9830;</div><p>No courses yet. Add your first course!</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9830;</div><p>No courses available yet.</p></div>';
     return;
   }
 
   el.innerHTML = courses.map(c => {
     const teacher = teachers.find(t => t.id == c.teacherId);
     const enrolled = students.filter(s => (s.courses || []).includes(c.id)).length;
-    return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}" onclick="openModal('course', ${c.id})">
+    return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:start">
         <h4>${c.name}</h4>
         <span class="badge badge-${c.category}">${c.category === 'ap' ? 'AP Level' : 'Foundation'}</span>
@@ -770,6 +761,161 @@ function timeAgo(dateStr) {
   if (hrs < 24) return hrs + 'h ago';
   const days = Math.floor(hrs / 24);
   return days + 'd ago';
+}
+
+// ── Feedback ──
+const FEEDBACK_TAGS = {
+  student: ['Clear explanations', 'Fun & engaging', 'Great practice problems', 'Very patient', 'Improved my grades', 'Well organized'],
+  parent:  ['Regular progress updates', 'Easy to reach', 'Great value', 'My child improved', 'Professional', 'Flexible scheduling']
+};
+const RATING_LABELS = ['', 'Not good', 'Could be better', 'It was okay', 'Really good!', 'Absolutely loved it! '];
+
+let feedbackRole = 'student';
+let feedbackRating = 0;
+let selectedTags = [];
+
+function setFeedbackRole(role, btn) {
+  feedbackRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeedbackTags();
+}
+
+function renderFeedbackTags() {
+  selectedTags = [];
+  const el = document.getElementById('feedback-tags');
+  el.innerHTML = FEEDBACK_TAGS[feedbackRole].map(tag =>
+    `<span class="tag-chip" onclick="toggleTag(this, '${tag}')">${tag}</span>`
+  ).join('');
+}
+
+function toggleTag(el, tag) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) {
+    selectedTags.push(tag);
+  } else {
+    selectedTags = selectedTags.filter(t => t !== tag);
+  }
+}
+
+function initStarRating() {
+  const stars = document.querySelectorAll('.star');
+  const hint = document.getElementById('rating-hint');
+
+  stars.forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      const val = Number(star.dataset.value);
+      stars.forEach(s => s.classList.toggle('hovered', Number(s.dataset.value) <= val));
+      hint.textContent = RATING_LABELS[val];
+      hint.classList.add('rated');
+    });
+    star.addEventListener('mouseleave', () => {
+      stars.forEach(s => s.classList.remove('hovered'));
+      hint.textContent = feedbackRating ? RATING_LABELS[feedbackRating] : 'Tap a star to rate';
+      hint.classList.toggle('rated', feedbackRating > 0);
+    });
+    star.addEventListener('click', () => {
+      feedbackRating = Number(star.dataset.value);
+      document.getElementById('rating-value').value = feedbackRating;
+      stars.forEach(s => {
+        s.classList.toggle('selected', Number(s.dataset.value) <= feedbackRating);
+        s.classList.remove('hovered');
+      });
+      hint.textContent = RATING_LABELS[feedbackRating];
+      hint.classList.add('rated');
+      // Reveal rest of form progressively
+      ['tags-section', 'course-section', 'comment-section', 'name-section', 'feedback-submit-area']
+        .forEach(id => { document.getElementById(id).style.display = ''; });
+      renderFeedbackTags();
+    });
+  });
+}
+
+function handleFeedback(e) {
+  e.preventDefault();
+  if (!feedbackRating) { showToast('Please select a rating', 'error'); return; }
+
+  const fd = new FormData(e.target);
+  const entry = {
+    id: Date.now(),
+    role: feedbackRole,
+    rating: feedbackRating,
+    tags: [...selectedTags],
+    course: fd.get('course') || '',
+    comment: (fd.get('comment') || '').trim(),
+    name: (fd.get('submitter_name') || '').trim() || 'Anonymous',
+    submittedAt: new Date().toISOString()
+  };
+
+  const reviews = DB.get('feedback');
+  reviews.unshift(entry);
+  DB.set('feedback', reviews);
+
+  // Email notification
+  if (EMAILJS_CONFIG.feedbackTemplateId !== 'YOUR_FEEDBACK_TEMPLATE_ID') {
+    emailjs.init(EMAILJS_CONFIG.publicKey);
+    emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.feedbackTemplateId, {
+      to_email: OWNER_EMAIL,
+      reviewer_name: entry.name,
+      reviewer_role: entry.role.charAt(0).toUpperCase() + entry.role.slice(1),
+      rating: '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating),
+      rating_number: entry.rating + ' / 5',
+      course: entry.course || 'General',
+      tags: entry.tags.join(', ') || 'None selected',
+      comment: entry.comment || 'No comment left'
+    }).catch(err => console.error('EmailJS feedback error:', err));
+  }
+
+  // Refresh stat cards
+  const allReviews = DB.get('feedback');
+  document.getElementById('stat-reviews').textContent = allReviews.length;
+  const newAvg = (allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length).toFixed(1);
+  document.getElementById('stat-rating').textContent = newAvg + ' ★';
+  showToast('Thank you for your feedback!', 'success');
+  e.target.reset();
+  feedbackRating = 0;
+  selectedTags = [];
+  document.querySelectorAll('.star').forEach(s => s.classList.remove('selected', 'hovered'));
+  document.getElementById('rating-hint').textContent = 'Tap a star to rate';
+  document.getElementById('rating-hint').classList.remove('rated');
+  ['tags-section', 'course-section', 'comment-section', 'name-section', 'feedback-submit-area']
+    .forEach(id => { document.getElementById(id).style.display = 'none'; });
+  renderReviews();
+}
+
+function renderReviews() {
+  const reviews = DB.get('feedback');
+  const el = document.getElementById('reviews-list');
+  const avgEl = document.getElementById('reviews-avg');
+  if (!el) return;
+
+  if (reviews.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128172;</div><p>No reviews yet. Be the first!</p></div>';
+    if (avgEl) avgEl.style.display = 'none';
+    return;
+  }
+
+  const avg = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  document.getElementById('avg-score').textContent = avg;
+  document.getElementById('avg-stars').textContent = '★'.repeat(Math.round(avg));
+  document.getElementById('avg-count').textContent = reviews.length + ' review' + (reviews.length > 1 ? 's' : '');
+  if (avgEl) avgEl.style.display = '';
+
+  el.innerHTML = reviews.map(r => `
+    <div class="review-item">
+      <div class="review-top">
+        <span class="review-name">${r.name} <span style="font-weight:400;color:var(--gray-500);font-size:12px">&middot; ${r.role}</span></span>
+        <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+      </div>
+      <div class="review-meta">${r.course || 'General'} &middot; ${timeAgo(r.submittedAt)}</div>
+      ${r.tags.length ? `<div class="review-tags">${r.tags.map(t => `<span class="review-tag">${t}</span>`).join('')}</div>` : ''}
+      ${r.comment ? `<div class="review-comment">"${r.comment}"</div>` : ''}
+    </div>`).join('');
+}
+
+function renderFeedbackPage() {
+  renderReviews();
+  initStarRating();
 }
 
 // ── Init ──
