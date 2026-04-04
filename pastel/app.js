@@ -571,6 +571,12 @@ function renderStudents() {
 }
 
 // ── Render: Courses ──
+function waLink(courseName) {
+  const phone = OWNER_WHATSAPP.replace(/\D/g, '');
+  const msg = encodeURIComponent('Hi! I am interested in ' + courseName + '. Could you share the pricing details?');
+  return 'https://wa.me/' + phone + '?text=' + msg;
+}
+
 let courseFilter = 'all';
 function filterCourses(filter, btn) {
   courseFilter = filter;
@@ -604,7 +610,7 @@ function renderCourses() {
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
         <span>${enrolled} student(s)</span>
-        <a href="https://wa.me/${OWNER_WHATSAPP.replace(/\D/g,')}?text=${encodeURIComponent('Hi! I\'m interested in ' + c.name + '. Could you share the pricing details?')}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp</a>
+        <a href="${waLink(c.name)}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp</a>
       </div>
     </div>`;
   }).join('');
