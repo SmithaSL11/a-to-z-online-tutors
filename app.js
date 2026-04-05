@@ -15,6 +15,47 @@ const EMAILJS_CONFIG = {
 const OWNER_EMAIL = 'gargashu94@gmail.com';
 const OWNER_WHATSAPP = '+916283335390';
 
+// ── Supabase Configuration (cloud database for cross-device feedback) ──
+// 1. Create a free project at https://supabase.com
+// 2. Run the SQL setup in the SQL Editor (see README or comments below)
+// 3. Go to Project Settings → API and paste your values here
+const SUPABASE_URL = 'https://mlnaijcuapxcccxmlnjv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_R7gSNztkB_nhMbGjxNUSCg_oC1v3hVp';
+
+let supabaseClient = null;
+function initSupabase() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || typeof supabase === 'undefined') return;
+  try {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    console.warn('Supabase init failed:', e);
+  }
+}
+
+async function syncFeedbackFromCloud() {
+  if (!supabaseClient) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('feedback')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+    if (error) throw error;
+    const reviews = data.map(r => ({
+      id: r.id,
+      role: r.role,
+      rating: r.rating,
+      tags: r.tags || [],
+      course: r.course || '',
+      comment: r.comment || '',
+      name: r.name || 'Anonymous',
+      submittedAt: r.submitted_at
+    }));
+    DB.set('feedback', reviews);
+  } catch (e) {
+    console.warn('Supabase sync error:', e);
+  }
+}
+
 // ── Data Store (localStorage) ──
 const DB = {
   get(key) { return JSON.parse(localStorage.getItem('atz_' + key) || '[]'); },
@@ -509,9 +550,11 @@ function renderRegistrations() {
 }
 
 // ── Render: Dashboard ──
-function renderDashboard() {
+async function renderDashboard() {
   document.getElementById('stat-courses').textContent = DB.get('courses').length;
   document.getElementById('stat-registrations').textContent = DB.get('registrations').length;
+  // Sync from cloud first so reviews are up-to-date across all devices
+  await syncFeedbackFromCloud();
   const reviews = DB.get('feedback');
   document.getElementById('stat-reviews').textContent = reviews.length;
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—';
@@ -890,6 +933,22 @@ function handleFeedback(e) {
   reviews.unshift(entry);
   DB.set('feedback', reviews);
 
+  // Save to cloud database for cross-device persistence
+  if (supabaseClient) {
+    supabaseClient.from('feedback').insert({
+      id: entry.id,
+      role: entry.role,
+      rating: entry.rating,
+      tags: entry.tags,
+      course: entry.course,
+      comment: entry.comment,
+      name: entry.name,
+      submitted_at: entry.submittedAt
+    }).then(({ error }) => {
+      if (error) console.warn('Supabase save error:', error);
+    });
+  }
+
   // Email notification
   if (EMAILJS_CONFIG.feedbackTemplateId !== 'YOUR_FEEDBACK_TEMPLATE_ID') {
     emailjs.init(EMAILJS_CONFIG.publicKey);
@@ -981,6 +1040,7 @@ function seedDefaults() {
     ]);
   }
 }
+initSupabase();
 seedDefaults();
 
 // ── Init ──
