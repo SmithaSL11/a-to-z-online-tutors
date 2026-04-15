@@ -274,8 +274,9 @@ function buildCourseForm(data) {
       <div class="form-group">
         <label>Category</label>
         <select name="category">
-          <option value="ap" ${d.category === 'ap' ? 'selected' : ''}>AP Level ($28/hr)</option>
-          <option value="foundation" ${d.category === 'foundation' ? 'selected' : ''}>Foundation ($25/hr)</option>
+          <option value="ap" ${d.category === 'ap' ? 'selected' : ''}>AP Level</option>
+          <option value="foundation" ${d.category === 'foundation' ? 'selected' : ''}>Foundation</option>
+          <option value="sat" ${d.category === 'sat' ? 'selected' : ''}>SAT Prep</option>
         </select>
       </div>
       <div class="form-group">
@@ -649,14 +650,15 @@ function renderCourses() {
     return;
   }
 
+  const categoryLabel = { ap: 'AP Level', foundation: 'Foundation', sat: 'SAT Prep' };
   el.innerHTML = courses.map(c => {
     const teacher = teachers.find(t => t.id == c.teacherId);
-    return `<div class="course-card ${c.category === 'foundation' ? 'foundation' : ''}">
+    return `<div class="course-card ${c.category}">
       <div style="display:flex;justify-content:space-between;align-items:start">
         <h4>${c.name}</h4>
-        <span class="badge badge-${c.category}">${c.category === 'ap' ? 'AP Level' : 'Foundation'}</span>
+        <span class="badge badge-${c.category}">${categoryLabel[c.category] || c.category}</span>
       </div>
-      <div class="course-meta">${teacher ? teacher.name : 'Unassigned'} &middot; ${c.subject || ''} &middot; ${c.totalHours || 45}hrs</div>
+      <div class="course-meta">${teacher ? teacher.name : 'Unassigned'} &middot; ${c.subject || ''}</div>
       ${c.description ? `<p style="font-size:13px;color:var(--gray-500);margin-bottom:12px">${c.description}</p>` : ''}
       <div class="course-stats">
         <a href="${waLink(c.name)}" target="_blank" class="course-wa-btn">&#128172; Ask on WhatsApp +91 6283335390</a>
@@ -1036,12 +1038,39 @@ function seedDefaults() {
       { id: 7, name: 'Honors Chemistry', subject: 'Chemistry', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Foundation honors chemistry course' },
       { id: 8, name: 'Pre-Calculus', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Pre-calculus fundamentals & preparation' },
       { id: 9, name: 'Trigonometry', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 30, rate1on1: 25, rateGroup: 15, description: 'Trigonometry foundations' },
-      { id: 10, name: 'Algebra', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 30, rate1on1: 25, rateGroup: 15, description: 'Algebra I & II fundamentals' }
+      { id: 10, name: 'Algebra', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 30, rate1on1: 25, rateGroup: 15, description: 'Algebra I & II fundamentals' },
+      { id: 11, name: 'SAT Math', subject: 'Mathematics', category: 'sat', teacherId: 1, totalHours: 30, rate1on1: 28, rateGroup: 15, description: 'Targeted SAT Math prep: algebra, advanced math, problem-solving & data analysis' },
+      { id: 12, name: 'SAT English', subject: 'English', category: 'sat', teacherId: 1, totalHours: 30, rate1on1: 28, rateGroup: 15, description: 'Comprehensive SAT English prep: reading comprehension, writing, grammar & vocabulary' },
+      { id: 13, name: 'Statistics', subject: 'Mathematics', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Statistics fundamentals: data analysis, probability & inference' },
+      { id: 14, name: 'AP English Lang & Comp', subject: 'English', category: 'ap', teacherId: 1, totalHours: 40, rate1on1: 28, rateGroup: 15, description: 'AP English Language & Composition — rhetoric, argumentation & synthesis' },
+      { id: 15, name: 'English Honors', subject: 'English', category: 'foundation', teacherId: 1, totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Honors English: literature, essay writing & analytical reading' }
     ]);
   }
 }
 initSupabase();
 seedDefaults();
+
+// ── Migrations ──
+(function migrateCourses() {
+  let courses = DB.get('courses');
+  const names = courses.map(c => c.name);
+  const toAdd = [];
+  let maxId = courses.reduce((m, c) => Math.max(m, c.id || 0), 0);
+
+  const missing = [
+    { name: 'SAT Math', subject: 'Mathematics', category: 'sat', totalHours: 30, rate1on1: 28, rateGroup: 15, description: 'Targeted SAT Math prep: algebra, advanced math, problem-solving & data analysis' },
+    { name: 'SAT English', subject: 'English', category: 'sat', totalHours: 30, rate1on1: 28, rateGroup: 15, description: 'Comprehensive SAT English prep: reading comprehension, writing, grammar & vocabulary' },
+    { name: 'Statistics', subject: 'Mathematics', category: 'foundation', totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Statistics fundamentals: data analysis, probability & inference' },
+    { name: 'AP English Lang & Comp', subject: 'English', category: 'ap', totalHours: 40, rate1on1: 28, rateGroup: 15, description: 'AP English Language & Composition — rhetoric, argumentation & synthesis' },
+    { name: 'English Honors', subject: 'English', category: 'foundation', totalHours: 35, rate1on1: 25, rateGroup: 15, description: 'Honors English: literature, essay writing & analytical reading' }
+  ];
+
+  missing.forEach(c => {
+    if (!names.includes(c.name)) toAdd.push({ ...c, id: ++maxId, teacherId: 1 });
+  });
+
+  if (toAdd.length) DB.set('courses', [...courses, ...toAdd]);
+})();
 
 // ── Init ──
 renderDashboard();
