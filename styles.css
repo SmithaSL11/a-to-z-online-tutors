@@ -569,6 +569,25 @@ tr:hover td { background: var(--gray-50); }
 .action-btn.delete { background: var(--danger-bg); color: var(--danger); }
 .action-btn.delete:hover { background: #fecaca; }
 
+/* ── Dashboard Video ── */
+.dashboard-video-section { margin-bottom: 28px; }
+.dashboard-video-title { font-size: 17px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+.dashboard-video-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  padding-top: 56.25%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.dashboard-video-wrapper iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: none;
+}
+
 /* ── Feedback Page ── */
 .dashboard-feedback-grid {
   display: grid;
