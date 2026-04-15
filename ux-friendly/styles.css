@@ -267,6 +267,7 @@ tr:hover td { background: var(--gray-50); }
 }
 .badge-ap { background: var(--accent-bg); color: var(--accent); }
 .badge-foundation { background: var(--warning-bg); color: var(--warning); }
+.badge-sat { background: #fdf4ff; color: #9333ea; }
 .badge-active { background: var(--success-bg); color: var(--success); }
 .badge-inactive { background: var(--gray-100); color: var(--gray-500); }
 .badge-paid { background: var(--success-bg); color: var(--success); }
@@ -285,6 +286,8 @@ tr:hover td { background: var(--gray-50); }
 }
 .course-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
 .course-card.foundation:hover { border-color: var(--warning); }
+.course-card.sat { border-color: #e9d5ff; background: linear-gradient(135deg, #fdf4ff 0%, #fff 60%); }
+.course-card.sat:hover { border-color: #9333ea; box-shadow: 0 4px 12px rgba(147,51,234,0.12); }
 .course-card h4 { font-size: 15px; margin-bottom: 6px; color: var(--gray-900); font-weight: 600; }
 .course-card.foundation h4 { color: var(--gray-900); }
 .course-card .course-meta { color: var(--gray-500); font-size: 13px; margin-bottom: 12px; }
@@ -313,6 +316,32 @@ tr:hover td { background: var(--gray-50); }
   background: #25d366;
   color: #fff;
 }
+
+/* SAT Highlight Banner */
+.sat-highlight-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  color: white;
+}
+.sat-banner-content { display: flex; align-items: center; gap: 14px; }
+.sat-banner-icon { font-size: 32px; flex-shrink: 0; }
+.sat-banner-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.sat-banner-desc { font-size: 13px; opacity: 0.85; line-height: 1.4; }
+.sat-banner-btn {
+  flex-shrink: 0;
+  background: white !important;
+  color: #7c3aed !important;
+  border-color: white !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+}
+.sat-banner-btn:hover { background: #f5f3ff !important; }
 
 /* Filter */
 .courses-filter { display: flex; gap: 6px; margin-bottom: 20px; }

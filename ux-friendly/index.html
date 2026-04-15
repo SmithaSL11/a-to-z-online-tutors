@@ -70,10 +70,21 @@
       <div class="page-header">
         <h1>Courses</h1>
       </div>
+      <div class="sat-highlight-banner">
+        <div class="sat-banner-content">
+          <div class="sat-banner-icon">&#127775;</div>
+          <div>
+            <div class="sat-banner-title">SAT Math &amp; English Training</div>
+            <div class="sat-banner-desc">Comprehensive SAT prep — targeted strategies, full-length practice, and expert coaching to maximize your score.</div>
+          </div>
+        </div>
+        <button class="filter-btn sat-banner-btn" onclick="filterCourses('sat', this)">View SAT Courses</button>
+      </div>
       <div class="courses-filter">
         <button class="filter-btn active" onclick="filterCourses('all', this)">All</button>
         <button class="filter-btn" onclick="filterCourses('ap', this)">AP Level</button>
         <button class="filter-btn" onclick="filterCourses('foundation', this)">Foundation</button>
+        <button class="filter-btn" onclick="filterCourses('sat', this)">SAT Prep</button>
       </div>
       <div id="courses-list" class="cards-grid"></div>
     </section>
